@@ -19,8 +19,12 @@ package org.apache.flink.cdc.connectors.sqlserver.source.config;
 
 import org.apache.flink.cdc.connectors.base.options.StartupOptions;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import java.util.Properties;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Unit tests for {@link SqlServerSourceConfigFactory}. */
 class SqlServerSourceConfigFactoryTest {
@@ -41,9 +45,9 @@ class SqlServerSourceConfigFactoryTest {
 
         SqlServerSourceConfig sourceConfig = factory.create(0);
 
-        Assertions.assertThat(sourceConfig.getStartupOptions())
+        assertThat(sourceConfig.getStartupOptions())
                 .isEqualTo(StartupOptions.timestamp(startupTimestampMillis));
-        Assertions.assertThat(sourceConfig.getDbzProperties().getProperty("snapshot.mode"))
+        assertThat(sourceConfig.getDbzProperties().getProperty("snapshot.mode"))
                 .isEqualTo("schema_only");
     }
 
@@ -63,8 +67,54 @@ class SqlServerSourceConfigFactoryTest {
                 .scanNewlyAddedTableEnabled(true)
                 .releaseSnapshotMetadataEnabled(true);
 
-        Assertions.assertThatThrownBy(() -> factory.create(0))
+        assertThatThrownBy(() -> factory.create(0))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("cannot both be enabled");
+    }
+
+    @Test
+    void testFetchSizePropagatedToDebeziumProperties() {
+        SqlServerSourceConfigFactory factory = createFactory();
+        factory.fetchSize(5000);
+
+        SqlServerSourceConfig config = factory.create(0);
+
+        assertThat(config.getDbzProperties().getProperty("snapshot.fetch.size")).isEqualTo("5000");
+        assertThat(config.getDbzConnectorConfig().getSnapshotFetchSize()).isEqualTo(5000);
+    }
+
+    @Test
+    void testDefaultFetchSizePropagatedToDebeziumProperties() {
+        SqlServerSourceConfigFactory factory = createFactory();
+
+        SqlServerSourceConfig config = factory.create(0);
+
+        assertThat(config.getDbzProperties().getProperty("snapshot.fetch.size")).isEqualTo("1024");
+        assertThat(config.getDbzConnectorConfig().getSnapshotFetchSize()).isEqualTo(1024);
+    }
+
+    @Test
+    void testDebeziumPropertiesCanOverrideFetchSize() {
+        SqlServerSourceConfigFactory factory = createFactory();
+        factory.fetchSize(5000);
+        Properties dbzProps = new Properties();
+        dbzProps.setProperty("snapshot.fetch.size", "8000");
+        factory.debeziumProperties(dbzProps);
+
+        SqlServerSourceConfig config = factory.create(0);
+
+        assertThat(config.getDbzProperties().getProperty("snapshot.fetch.size")).isEqualTo("8000");
+        assertThat(config.getDbzConnectorConfig().getSnapshotFetchSize()).isEqualTo(8000);
+    }
+
+    private static SqlServerSourceConfigFactory createFactory() {
+        SqlServerSourceConfigFactory factory = new SqlServerSourceConfigFactory();
+        factory.hostname("localhost");
+        factory.port(1433);
+        factory.databaseList("myDB");
+        factory.username("user");
+        factory.password("password");
+        factory.startupOptions(StartupOptions.initial());
+        return factory;
     }
 }

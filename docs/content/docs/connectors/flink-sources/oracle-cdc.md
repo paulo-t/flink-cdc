@@ -553,6 +553,14 @@ CREATE TABLE products (
 Features
 --------
 
+### Snapshot fetch size
+
+For incremental snapshots, `scan.snapshot.fetch.size` (default: `1024`) controls the JDBC fetch size used to read each snapshot chunk. The DataStream incremental source builder exposes the same setting through `fetchSize(...)`. This setting controls the fetch batch, not the number of rows in a snapshot chunk.
+
+The value is passed to Debezium as `snapshot.fetch.size`. An explicit `debezium.snapshot.fetch.size` option takes precedence; when using the DataStream builder, set `snapshot.fetch.size` in the properties passed to `debeziumProperties(...)`.
+
+If a job previously used `debezium.query.fetch.size` as a workaround for incremental snapshot reads, replace it with `scan.snapshot.fetch.size` or `debezium.snapshot.fetch.size`. Incremental snapshot reads now use `snapshot.fetch.size`; `query.fetch.size` no longer controls this path.
+
 ### Exactly-Once Processing
 
 The Oracle CDC connector is a Flink Source connector which will read database snapshot first and then continues to read change events with **exactly-once processing** even failures happen. Please read [How the connector works](https://debezium.io/documentation/reference/1.9/connectors/oracle.html#how-the-oracle-connector-works).
