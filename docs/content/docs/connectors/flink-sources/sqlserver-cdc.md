@@ -358,6 +358,14 @@ CREATE TABLE products (
 Features
 --------
 
+### Snapshot fetch size
+
+For incremental snapshots, `scan.snapshot.fetch.size` (default: `1024`) controls the JDBC fetch size used to read each snapshot chunk. The DataStream incremental source builder exposes the same setting through `fetchSize(...)`. This setting controls the fetch batch, not the number of rows in a snapshot chunk.
+
+The value is passed to Debezium as `snapshot.fetch.size`. An explicit `debezium.snapshot.fetch.size` option takes precedence; when using the DataStream builder, set `snapshot.fetch.size` in the properties passed to `debeziumProperties(...)`.
+
+If a job previously used `debezium.query.fetch.size` as a workaround for incremental snapshot reads, replace it with `scan.snapshot.fetch.size` or `debezium.snapshot.fetch.size`. Incremental snapshot reads now use `snapshot.fetch.size`; `query.fetch.size` no longer controls this path.
+
 ### Exactly-Once Processing
 
 The SQL Server CDC connector first reads a database snapshot and then continues to read change events, providing **exactly-once processing** even if failures occur. Please read [How the connector works](https://debezium.io/documentation/reference/1.9/connectors/sqlserver.html#how-the-sqlserver-connector-works).

@@ -553,6 +553,14 @@ CREATE TABLE products (
 特性
 --------
 
+### 快照读取批量大小
+
+增量快照通过 `scan.snapshot.fetch.size`（默认值为 `1024`）设置读取快照分片时的 JDBC fetch size。DataStream 增量 Source 的 builder 通过 `fetchSize(...)` 设置相同参数。该参数控制每批读取量，不决定单个快照分片的总行数。
+
+该值会传递给 Debezium 的 `snapshot.fetch.size`。显式设置的 `debezium.snapshot.fetch.size` 优先级更高；使用 DataStream builder 时，可在传给 `debeziumProperties(...)` 的属性中设置 `snapshot.fetch.size`。
+
+如果作业此前使用 `debezium.query.fetch.size` 作为增量快照读取的临时解决方案，应改用 `scan.snapshot.fetch.size` 或 `debezium.snapshot.fetch.size`。增量快照读取现在使用 `snapshot.fetch.size`，`query.fetch.size` 不再控制此读取过程。
+
 ### Exactly-Once 处理
 
 Oracle CDC 连接器是一个 Flink Source 连接器，它将首先读取数据库快照，然后继续读取变更事件，即使在处理时出现故障，也能**准确读取数据**。请参阅 [How the connector works](https://debezium.io/documentation/reference/1.9/connectors/oracle.html#how-the-oracle-connector-works)。

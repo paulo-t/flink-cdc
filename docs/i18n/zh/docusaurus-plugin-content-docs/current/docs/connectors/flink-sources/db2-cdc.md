@@ -323,6 +323,14 @@ Flink SQL> SELECT * FROM products;
 
 特性
 --------
+
+### 快照读取批量大小
+
+增量快照通过 `scan.snapshot.fetch.size`（默认值为 `1024`）设置读取快照分片时的 JDBC fetch size。DataStream 增量 Source 的 builder 通过 `fetchSize(...)` 设置相同参数。该参数控制每批读取量，不决定单个快照分片的总行数。
+
+该值会传递给 Debezium 的 `snapshot.fetch.size`。显式设置的 `debezium.snapshot.fetch.size` 优先级更高；使用 DataStream builder 时，可在传给 `debeziumProperties(...)` 的属性中设置 `snapshot.fetch.size`。
+
+如果作业此前使用 `debezium.query.fetch.size` 作为增量快照读取的临时解决方案，应改用 `scan.snapshot.fetch.size` 或 `debezium.snapshot.fetch.size`。增量快照读取现在使用 `snapshot.fetch.size`，`query.fetch.size` 不再控制此读取过程。
 ### 启动模式
 
 配置选项 `scan.startup.mode` 指定 DB2 CDC 使用者的启动模式。有效枚举包括：
